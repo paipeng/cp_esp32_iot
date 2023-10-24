@@ -103,7 +103,7 @@ void wifi_connect(void)
   delay(500);
 }
 
-void mqtt_ping() {
+void mqtt_pong() {
   String mqttPong = String(MQTT_TOPIC_PREFIX) + String(MQTT_TOPIC_PONG);
   Serial.print("publish topic: " + mqttPong + "...\n");
   boolean ret = mqttClient.publish(mqttPong.c_str(), "{\"udid\": \"420d2b68-6a4a-11ee-8c99-0242ac120002\", \"state\": 1}");
@@ -234,7 +234,7 @@ void setup(){
   mqtt_connect();
 
   // Publish and subscribe
-  mqtt_ping();
+  mqtt_pong();
   mqtt_subscribe();
 }
 
@@ -242,7 +242,7 @@ void loop(){
   int buttonState = digitalRead(BUTTON_PIN); // read new state
   if (buttonState == LOW) {
     Serial.println("The button is being pressed");
-    mqtt_ping();
+    mqtt_pong();
     delay(1000);
   }
   buttonState = digitalRead(BUTTON2_PIN);
