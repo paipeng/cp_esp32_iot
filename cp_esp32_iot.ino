@@ -3,6 +3,8 @@
 #include <WiFi.h>
 #include <WiFiMulti.h>
 #include <PubSubClient.h>
+#include <DallasTemperature.h>
+
 #include "public.h"
 #include "wifi_const.h"
 #include "mqtt_const.h"
@@ -28,7 +30,10 @@
 char DEVICE_UDID[18];
 
 #define BUTTON_PIN 26 // ESP32 GPIO16 pin connected to button's pin
-
+#define BUTTON2_PIN 27
+#define ONE_WIRE_BUS    13 //1-wire数据总线连接
+OneWire oneWire(ONE_WIRE_BUS); //声明
+DallasTemperature sensors(&oneWire); //声明
 
 WiFiMulti WiFiMulti;
 
@@ -124,10 +129,43 @@ void mqtt_connect() {
   }    
 }
 
+void mqtt_publish_temperature(float temperature) {
+  String mqttTopic = String(MQTT_TOPIC_PREFIX) + String(MQTT_TOPIC_TEMPERATURE);
+  Serial.print("publish topic: " + mqttTopic + "...\n");
+  String data = "{\"udid\": \"" + String(DEVICE_UDID) + "\", \"state\": 1, \"value\": " + temperature + "}";
+  boolean ret = mqttClient.publish(mqttTopic.c_str(), data.c_str());
+  if (ret) {
+    Serial.print("publish temperature success!\n");
+  } else {
+    Serial.print("publish temperature error!\n");    
+  }
+}
+
+float gpio_read_temperature() {
+  Serial.println("发起温度转换");
+  sensors.requestTemperatures(); //向总线上所有设备发送温度转换请求，默认情况下该方法会阻塞
+  Serial.println("温度转换完成");
+
+  float tempC = sensors.getTempCByIndex(0); //获取索引号0的传感器摄氏温度数据
+  if (tempC != DEVICE_DISCONNECTED_C) //如果获取到的温度正常
+  {
+    Serial.print("当前温度是： ");
+    Serial.print(tempC);
+    Serial.println(" ℃\n");
+  } else {
+    Serial.println("read temperature error\n");
+  }
+  return tempC;
+}
+
 void setup(){
-  pinMode(BUTTON_PIN, INPUT_PULLUP); // set ESP32 pin to input pull-up mode
-  
   Serial.begin(115200);
+
+  pinMode(BUTTON_PIN, INPUT_PULLUP); // set ESP32 pin to input pull-up mode
+  pinMode(BUTTON2_PIN, INPUT_PULLUP);
+  sensors.begin();
+  
+
   wifi_connect();
 
   mqtt_connect();
@@ -142,6 +180,16 @@ void loop(){
   if (buttonState == LOW) {
     Serial.println("The button is being pressed");
     mqtt_ping();
+    delay(1000);
+  }
+  buttonState = digitalRead(BUTTON2_PIN);
+  if (buttonState == LOW) {
+    Serial.println("The button2 is being pressed");
+    float temperature = gpio_read_temperature();
+    if (temperature != DEVICE_DISCONNECTED_C) {
+      mqtt_publish_temperature(temperature);
+    }
+    delay(1000);
   }
   if (mqttClient.connected()) {
     mqttClient.loop();
