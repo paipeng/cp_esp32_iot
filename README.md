@@ -1,0 +1,7 @@
+# cp_esp32_iot
+ESP32 Dev IoT
+
+- WIFI
+- MQTT
+- TEMPERATURE SENSOR
+- KEEPALIVE (PING-PONG)
