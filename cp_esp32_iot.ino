@@ -80,6 +80,7 @@ void mqtt_connect() {
   //connecting to a mqtt broker
   mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
   mqttClient.setCallback(callback);
+  mqttClient.setKeepAlive(60*60);
   while (!mqttClient.connected()) {
       String client_id = "cp-esp32-client-";
       client_id += String(WiFi.macAddress());
