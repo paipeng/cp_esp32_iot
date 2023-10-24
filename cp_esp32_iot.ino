@@ -11,12 +11,17 @@
 //#define WIFI_PASSWD ""
 
 // MQTT Broker
-const char *mqtt_broker = "192.168.1.228";
-const char *subscribe_topic = "CP_IOT_PING";
-const char *publish_topic = "CP_IOT_PONG";
-const char *mqtt_username = "admin";
-const char *mqtt_password = "public";
-const int mqtt_port = 1883;
+
+#define MQTT_BROKER "192.168.1.228"
+#define MQTT_PORT 1883
+
+#define MQTT_USERNAME "admin"
+#define MQTT_PASSWORD "public"
+
+#define MQTT_TOPIC_PREFIX "CP_IOT"
+#define MQTT_TOPIC_PING "PING"
+#define MQTT_TOPIC_PONG "PONG"
+
 #define DEVICE_UUID "420d2b68-6a4a-11ee-8c99-0242ac120002"
 
 WiFiMulti WiFiMulti;
