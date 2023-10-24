@@ -223,7 +223,7 @@ void loop(){
     Serial.println("The button2 is being pressed");
     float temperature = gpio_read_temperature();
     if (temperature != DEVICE_DISCONNECTED_C) {
-      String temp = "Temp: " + String(temperature) + " ℃";
+      String temp = "Temp: " + String(temperature) + " °C";
       display.clear();
       display.setFont(ArialMT_Plain_10);
       display.drawString(0, 0, temp);
