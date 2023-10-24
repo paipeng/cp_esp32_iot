@@ -115,6 +115,7 @@ void mqtt_pong() {
 }
 
 void mqtt_subscribe() {
+  // udid ping
   String mqttPing = String(MQTT_TOPIC_PREFIX) + String(DEVICE_UDID) + "/" + String(MQTT_TOPIC_PING);  
   Serial.print("\nsubscribe udid ping topic: " + mqttPing + "...\n");
   boolean ret = mqttClient.subscribe(mqttPing.c_str());
@@ -123,7 +124,7 @@ void mqtt_subscribe() {
   } else {
     Serial.print("subscribe udid ping error!\n");    
   }
-
+  // broadcasting ping
   mqttPing = String(MQTT_TOPIC_PREFIX) + String(MQTT_TOPIC_PING);  
   Serial.print("\nsubscribe broadcasting ping topic: " + mqttPing + "...\n");
   ret = mqttClient.subscribe(mqttPing.c_str());
@@ -231,6 +232,7 @@ void setup(){
   pinMode(CP_GPIO_LED, OUTPUT);
   pinMode(BUTTON_PIN, INPUT_PULLUP); // set ESP32 pin to input pull-up mode
   pinMode(BUTTON2_PIN, INPUT_PULLUP);
+  pinMode(BUTTON3_PIN, INPUT_PULLUP);
   sensors.begin();
   
   display.init();//初始化UI
@@ -269,6 +271,20 @@ void loop(){
       mqtt_publish_temperature(temperature);
     }
     delay(1000);
+  }
+  buttonState = digitalRead(BUTTON3_PIN);
+  if (buttonState == LOW) {
+    Serial.println("The button3 is being pressed");
+    
+    
+    if (LED_STATE == 0) {
+      LED_STATE = 1;
+    } else {
+      LED_STATE = 0;
+    }
+
+    gpio_led_toggle(LED_STATE);
+    
   }
   if (mqttClient.connected()) {
     mqttClient.loop();
