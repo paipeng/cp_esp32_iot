@@ -159,6 +159,17 @@ void mqtt_callback(char *topic, byte *payload, unsigned int length) {
     for (int i = 0; i < length; i++) {
         Serial.print((char) payload[i]);
     }
+
+    if (strstr(topic, "PING")) {
+      mqtt_pong();
+      
+    } else if (strstr(topic, "LED")) {
+      if (strcmp((const char*)payload, "1")) {
+        gpio_led_toggle(1);
+      } else {
+        gpio_led_toggle(0);
+      }
+    }
     Serial.println();
     Serial.println("-----------------------");
 }
