@@ -159,6 +159,7 @@ float gpio_read_temperature() {
 }
 
 void setup(){
+  delay(2000);
   Serial.begin(115200);
 
   pinMode(BUTTON_PIN, INPUT_PULLUP); // set ESP32 pin to input pull-up mode
