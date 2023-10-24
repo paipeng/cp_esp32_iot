@@ -65,45 +65,33 @@ void wifi_connect(void)
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
 
+  Serial.println("Connected to the Wi-Fi network");
   delay(500);
 }
 
-void setup(){
-  Serial.begin(115200);
-  wifi_connect();
-
-  mqtt_connect();
-}
-
-void mqtt_connect() {
-  Serial.println("Connected to the Wi-Fi network");
-  //connecting to a mqtt broker
-  mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
-  mqttClient.setCallback(callback);
-  mqttClient.setKeepAlive(60*60);
-  while (!mqttClient.connected()) {
-      String client_id = "cp-esp32-client-";
-      client_id += String(WiFi.macAddress());
-      Serial.printf("The client %s connects to the public MQTT broker\n", client_id.c_str());
-      if (mqttClient.connect(client_id.c_str(), MQTT_USERNAME, MQTT_PASSWORD)) {
-          Serial.println("Public EMQX MQTT broker connected");
-      } else {
-          Serial.print("failed with state ");
-          Serial.print(mqttClient.state());
-          delay(2000);
-      }
-  }
-  // Publish and subscribe
+void mqtt_ping() {
   String mqttPong = String(MQTT_TOPIC_PREFIX) + String(MQTT_TOPIC_PONG);
-  Serial.print("publish topic: " + mqttPong);
-  mqttClient.publish(mqttPong.c_str(), "{\"udid\": \"420d2b68-6a4a-11ee-8c99-0242ac120002\", \"state\": 1}");
-  String mqttPing = String(MQTT_TOPIC_PREFIX) + String(DEVICE_UDID) + "/" + String(MQTT_TOPIC_PING);
-  
-  Serial.print("\nsubscribe topic: " + mqttPing + "...\n");
-  mqttClient.subscribe(mqttPing.c_str());
+  Serial.print("publish topic: " + mqttPong + "...\n");
+  boolean ret = mqttClient.publish(mqttPong.c_str(), "{\"udid\": \"420d2b68-6a4a-11ee-8c99-0242ac120002\", \"state\": 1}");
+  if (ret) {
+    Serial.print("publish success!\n");
+  } else {
+    Serial.print("publish error!\n");    
+  }
 }
 
-void callback(char *topic, byte *payload, unsigned int length) {
+void mqtt_subscribe() {
+  String mqttPing = String(MQTT_TOPIC_PREFIX) + String(DEVICE_UDID) + "/" + String(MQTT_TOPIC_PING);  
+  Serial.print("\nsubscribe topic: " + mqttPing + "...\n");
+  boolean ret = mqttClient.subscribe(mqttPing.c_str());
+  if (ret) {
+    Serial.print("subscribe success!\n");
+  } else {
+    Serial.print("subscribe error!\n");    
+  }
+}
+
+void mqtt_callback(char *topic, byte *payload, unsigned int length) {
     Serial.print("Message arrived in topic: ");
     Serial.println(topic);
     Serial.print("Message:");
@@ -113,7 +101,40 @@ void callback(char *topic, byte *payload, unsigned int length) {
     Serial.println();
     Serial.println("-----------------------");
 }
+
+
+void mqtt_connect() {
+  //connecting to a mqtt broker
+  mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
+  mqttClient.setCallback(mqtt_callback);
+  mqttClient.setKeepAlive(60*60);
+  while (!mqttClient.connected()) {
+      String client_id = "cp-esp32-client-";
+      client_id += String(WiFi.macAddress());
+      Serial.printf("The client %s connects to the public MQTT broker\n", client_id.c_str());
+      if (mqttClient.connect(client_id.c_str(), MQTT_USERNAME, MQTT_PASSWORD)) {
+          Serial.println("Public EMQX MQTT broker connected");
+      } else {
+          Serial.print("failed with state ");
+          Serial.print(mqttClient.state());  
+          Serial.println("\n");
+          delay(2000);
+      }
+  }    
+}
+
+void setup(){
   
+  Serial.begin(115200);
+  wifi_connect();
+
+  mqtt_connect();
+
+  // Publish and subscribe
+  mqtt_ping();
+  mqtt_subscribe();
+}
+
 void loop(){
   mqttClient.loop();
 }
