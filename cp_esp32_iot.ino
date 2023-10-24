@@ -124,6 +124,15 @@ void mqtt_subscribe() {
   } else {
     Serial.print("subscribe broadcasting ping error!\n");    
   }
+  // LED
+  mqttPing = String(MQTT_TOPIC_PREFIX) + String(DEVICE_UDID) + "/" + String(MQTT_TOPIC_LED);  
+  Serial.print("\nsubscribe led topic: " + mqttPing + "...\n");
+  ret = mqttClient.subscribe(mqttPing.c_str());
+  if (ret) {
+    Serial.print("subscribe led success!\n");
+  } else {
+    Serial.print("subscribe led error!\n");    
+  }
 }
 
 void mqtt_callback(char *topic, byte *payload, unsigned int length) {
