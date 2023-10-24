@@ -27,6 +27,7 @@
 
 char DEVICE_UDID[18];
 
+#define BUTTON_PIN 26 // ESP32 GPIO16 pin connected to button's pin
 
 
 WiFiMulti WiFiMulti;
@@ -124,6 +125,7 @@ void mqtt_connect() {
 }
 
 void setup(){
+  pinMode(BUTTON_PIN, INPUT_PULLUP); // set ESP32 pin to input pull-up mode
   
   Serial.begin(115200);
   wifi_connect();
@@ -136,5 +138,14 @@ void setup(){
 }
 
 void loop(){
-  mqttClient.loop();
+  int buttonState = digitalRead(BUTTON_PIN); // read new state
+  if (buttonState == LOW) {
+    Serial.println("The button is being pressed");
+    mqtt_ping();
+  }
+  if (mqttClient.connected()) {
+    mqttClient.loop();
+  } else {
+    Serial.println("mqtt disconnected");    
+  }
 }
