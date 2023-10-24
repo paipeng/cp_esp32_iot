@@ -42,18 +42,26 @@ int counter = 1;
 SSD1306Wire display(0x3c, SDA, SCL);
 
 
+// LED
+#define CP_GPIO_LED    15 //1-wire数据总线连接
 
 
 
-
-
-char DEVICE_UDID[18];
-
-#define BUTTON_PIN 26 // ESP32 GPIO16 pin connected to button's pin
-#define BUTTON2_PIN 27
+// temperature
 #define ONE_WIRE_BUS    13 //1-wire数据总线连接
 OneWire oneWire(ONE_WIRE_BUS); //声明
 DallasTemperature sensors(&oneWire); //声明
+
+
+// button
+#define BUTTON_PIN 26 // ESP32 GPIO16 pin connected to button's pin
+#define BUTTON2_PIN 27
+#define BUTTON3_PIN 25
+
+
+char DEVICE_UDID[18];
+int LED_STATE = 0;
+
 
 WiFiMulti WiFiMulti;
 
@@ -135,6 +143,15 @@ void mqtt_subscribe() {
   }
 }
 
+void gpio_led_toggle(int state) {
+  Serial.println("gpio_led_toggle: " + state);
+  if (state == 1) {
+    digitalWrite(CP_GPIO_LED, HIGH);//LED1引脚输出高电平，点亮
+  } else {
+    digitalWrite(CP_GPIO_LED, LOW);//LED1引脚输出低电平，熄灭
+  }
+}
+
 void mqtt_callback(char *topic, byte *payload, unsigned int length) {
     Serial.print("Message arrived in topic: ");
     Serial.println(topic);
@@ -200,6 +217,7 @@ void setup(){
   delay(2000);
   Serial.begin(115200);
 
+  pinMode(CP_GPIO_LED, OUTPUT);
   pinMode(BUTTON_PIN, INPUT_PULLUP); // set ESP32 pin to input pull-up mode
   pinMode(BUTTON2_PIN, INPUT_PULLUP);
   sensors.begin();
