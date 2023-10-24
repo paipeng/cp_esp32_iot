@@ -88,12 +88,21 @@ void mqtt_ping() {
 
 void mqtt_subscribe() {
   String mqttPing = String(MQTT_TOPIC_PREFIX) + String(DEVICE_UDID) + "/" + String(MQTT_TOPIC_PING);  
-  Serial.print("\nsubscribe topic: " + mqttPing + "...\n");
+  Serial.print("\nsubscribe udid ping topic: " + mqttPing + "...\n");
   boolean ret = mqttClient.subscribe(mqttPing.c_str());
   if (ret) {
-    Serial.print("subscribe success!\n");
+    Serial.print("subscribe udid ping success!\n");
   } else {
-    Serial.print("subscribe error!\n");    
+    Serial.print("subscribe udid ping error!\n");    
+  }
+
+  mqttPing = String(MQTT_TOPIC_PREFIX) + String(MQTT_TOPIC_PING);  
+  Serial.print("\nsubscribe broadcasting ping topic: " + mqttPing + "...\n");
+  ret = mqttClient.subscribe(mqttPing.c_str());
+  if (ret) {
+    Serial.print("subscribe broadcasting ping success!\n");
+  } else {
+    Serial.print("subscribe broadcasting ping error!\n");    
   }
 }
 
