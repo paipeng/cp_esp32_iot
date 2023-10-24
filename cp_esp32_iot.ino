@@ -1,9 +1,13 @@
 
-
+// WIFI
 #include <WiFi.h>
 #include <WiFiMulti.h>
+// MQTT
 #include <PubSubClient.h>
+// Temeprature
 #include <DallasTemperature.h>
+// oled
+#include <SSD1306Wire.h>
 
 #include "public.h"
 #include "wifi_const.h"
@@ -26,6 +30,22 @@
 //#define MQTT_TOPIC_PREFIX "CP_IOT/"
 //#define MQTT_TOPIC_PING "PING"
 //#define MQTT_TOPIC_PONG "PONG"
+
+
+// OLED
+
+int counter = 1;
+
+//OLED引脚定义
+#define SDA   23
+#define SCL   18
+SSD1306Wire display(0x3c, SDA, SCL);
+
+
+
+
+
+
 
 char DEVICE_UDID[18];
 
@@ -175,7 +195,13 @@ void setup(){
   pinMode(BUTTON2_PIN, INPUT_PULLUP);
   sensors.begin();
   
+  display.init();//初始化UI
+  display.flipScreenVertically();//垂直翻转屏幕设置
+  display.setFont(ArialMT_Plain_24);//设置字体大小
+  display.drawString(0, 0, "Hello World");//显示
+  display.display();//将缓存数据写入到显示器
 
+  
   wifi_connect();
 
   mqtt_connect();
@@ -197,6 +223,11 @@ void loop(){
     Serial.println("The button2 is being pressed");
     float temperature = gpio_read_temperature();
     if (temperature != DEVICE_DISCONNECTED_C) {
+      String temp = "Temp: " + String(temperature) + " ℃";
+      display.clear();
+      display.setFont(ArialMT_Plain_10);
+      display.drawString(0, 0, temp);
+      display.display();//将缓存数据写入到显示器
       mqtt_publish_temperature(temperature);
     }
     delay(1000);
