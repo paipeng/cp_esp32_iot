@@ -8,6 +8,8 @@
 #include <DallasTemperature.h>
 // oled
 #include <SSD1306Wire.h>
+// JSON
+#include <ArduinoJson.h>
 
 #include "public.h"
 #include "wifi_const.h"
@@ -164,20 +166,31 @@ void mqtt_callback(char *topic, byte *payload, unsigned int length) {
         Serial.print((char) payload[i]);
         data += (char) payload[i];
     }
-    Serial.println();
     
-    Serial.println("Message len:" + length);
+    Serial.print("Message len:");
+    Serial.print(length);
+    Serial.println();
+
     Serial.println("data: " + data);
 
     if (strstr(topic, "PING")) {
       mqtt_pong();
       
     } else if (strstr(topic, "LED")) {
-      if (data.equals("1")) {
-        gpio_led_toggle(1);
+      StaticJsonDocument<200> doc;
+      DeserializationError error = deserializeJson(doc, data);
+    
+      // Test if parsing succeeds.
+      if (error) {
+        Serial.print(F("deserializeJson() failed: "));
+        Serial.println(error.f_str());
+        
       } else {
-        gpio_led_toggle(0);
+        long state = doc["state"];
+        gpio_led_toggle(state);
       }
+
+      
     }
     Serial.println();
     Serial.println("-----------------------mqtt-end");
