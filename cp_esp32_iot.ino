@@ -172,6 +172,16 @@ void mqtt_subscribe() {
   } else {
     Serial.print("subscribe led error!\n");    
   }
+
+  // MESSAGE_BOARD
+  mqttPing = String(MQTT_TOPIC_PREFIX) + String(DEVICE_UDID) + "/" + String(MQTT_TOPIC_MESSAGE_BOARD);  
+  Serial.print("\nsubscribe message board topic: " + mqttPing + "...\n");
+  ret = mqttClient.subscribe(mqttPing.c_str());
+  if (ret) {
+    Serial.print("subscribe message board success!\n");
+  } else {
+    Serial.print("subscribe message board error!\n");    
+  }
 }
 
 void gpio_led_toggle(int state) {
@@ -182,6 +192,19 @@ void gpio_led_toggle(int state) {
   } else {
     digitalWrite(CP_GPIO_LED, LOW);//LED1引脚输出低电平，熄灭
   }
+}
+
+void oled_message_board(String message) {
+#if USE_U8G2
+  u8g2.clearBuffer();
+  u8g2.setCursor(0, 20);
+  u8g2.print(message);    // Chinese "Hello World" 
+  u8g2.sendBuffer();
+#else
+  display.setFont(ArialMT_Plain_24);//设置字体大小
+  display.drawString(0, 0, "CP IOT");//显示
+  display.display();//将缓存数据写入到显示器
+#endif
 }
 
 void mqtt_callback(char *topic, byte *payload, unsigned int length) {
@@ -212,13 +235,22 @@ void mqtt_callback(char *topic, byte *payload, unsigned int length) {
       if (error) {
         Serial.print(F("deserializeJson() failed: "));
         Serial.println(error.f_str());
-        
       } else {
         long state = doc["state"];
         gpio_led_toggle(state);
       }
-
-      
+    } else if (strstr(topic, "MESSAGE_BOARD")) {
+      StaticJsonDocument<200> doc;
+      DeserializationError error = deserializeJson(doc, data);
+    
+      // Test if parsing succeeds.
+      if (error) {
+        Serial.print(F("deserializeJson() failed: "));
+        Serial.println(error.f_str());
+      } else {
+        String message = doc["message"];
+        oled_message_board(message);
+      }
     }
     Serial.println();
     Serial.println("-----------------------mqtt-end");
