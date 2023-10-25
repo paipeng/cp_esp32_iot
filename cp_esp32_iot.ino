@@ -145,7 +145,7 @@ void mqtt_subscribe() {
 }
 
 void gpio_led_toggle(int state) {
-  Serial.println("gpio_led_toggle: " + state);
+  Serial.println("gpio_led_toggle: " + String(state));
   if (state == 1) {
     digitalWrite(CP_GPIO_LED, HIGH);//LED1引脚输出高电平，点亮
   } else {
@@ -160,6 +160,7 @@ void mqtt_callback(char *topic, byte *payload, unsigned int length) {
     for (int i = 0; i < length; i++) {
         Serial.print((char) payload[i]);
     }
+    Serial.println();
 
     if (strstr(topic, "PING")) {
       mqtt_pong();
@@ -284,7 +285,7 @@ void loop(){
     }
 
     gpio_led_toggle(LED_STATE);
-    
+    delay(1000);
   }
   if (mqttClient.connected()) {
     mqttClient.loop();
