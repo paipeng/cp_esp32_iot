@@ -146,6 +146,7 @@ void mqtt_subscribe() {
 
 void gpio_led_toggle(int state) {
   Serial.println("gpio_led_toggle: " + String(state));
+  LED_STATE = state;
   if (state == 1) {
     digitalWrite(CP_GPIO_LED, HIGH);//LED1引脚输出高电平，点亮
   } else {
