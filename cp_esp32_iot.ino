@@ -240,7 +240,7 @@ void setup(){
   display.init();//初始化UI
   display.flipScreenVertically();//垂直翻转屏幕设置
   display.setFont(ArialMT_Plain_24);//设置字体大小
-  display.drawString(0, 0, "Hello World");//显示
+  display.drawString(0, 0, "CP IOT");//显示
   display.display();//将缓存数据写入到显示器
 
   
