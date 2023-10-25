@@ -43,6 +43,8 @@ SSD1306Wire display(0x3c, SDA, SCL);
 #include "wifi_const.h"
 #include "mqtt_const.h"
 
+// Timer
+hw_timer_t *cp_timer = NULL;
 
 
 // WIFI_SSID and WIFI_PASSWD are defined in wifi_const.h
@@ -334,9 +336,52 @@ void oled_draw_title() {
 #endif
 }
 
+void gpio_update_temperature() {
+  Serial.println("gpio_update_temperature");
+  float temperature = gpio_read_temperature();
+  if (temperature != DEVICE_DISCONNECTED_C) {
+#if USE_U8G2
+    String temp = "揾度: " + String(temperature) + " 度";
+    //u8g2.setFont(u8g2_font_wqy12_t_chinese2);  // use wqy chinese2 for all the glyphs of "你好世界"
+    //u8g2.setFontDirection(0);
+    u8g2.clearBuffer();
+    u8g2.setCursor(0, 20);
+    u8g2.print("你好CPIoT世界");
+    u8g2.setCursor(0, 40);
+    u8g2.print(temp);
+    u8g2.sendBuffer();
+#else 
+    String temp = "Temp: " + String(temperature) + " °C";
+    display.clear();
+    oled_draw_title();
+    display.setFont(ArialMT_Plain_10);
+    display.drawString(0, 40, temp);
+    display.display();//将缓存数据写入到显示器
+#endif
+    mqtt_publish_temperature(temperature);
+  }
+}
+
+void IRAM_ATTR onTimer(){
+  Serial.println("onTimer");
+  gpio_update_temperature();
+}
+
+void init_timer() {
+  // 80Mhz = 1 second
+  // 80 * 60 = 1 minute
+  // 80 * 60 * 60 = 1 hour
+  cp_timer = timerBegin(0, 80 * 60 * 1, true);
+  timerAttachInterrupt(cp_timer, &onTimer, true);
+  timerAlarmWrite(cp_timer, 1000000, true);
+  timerAlarmEnable(cp_timer); //Just Enable
+}
+
 void setup(){
   delay(2000);
   Serial.begin(115200);
+
+  init_timer();
 
   pinMode(CP_GPIO_LED, OUTPUT);
   pinMode(BUTTON_PIN, INPUT_PULLUP); // set ESP32 pin to input pull-up mode
@@ -367,28 +412,7 @@ void loop(){
   buttonState = digitalRead(BUTTON2_PIN);
   if (buttonState == LOW) {
     Serial.println("The button2 is being pressed");
-    float temperature = gpio_read_temperature();
-    if (temperature != DEVICE_DISCONNECTED_C) {
-#if USE_U8G2
-      String temp = "揾度: " + String(temperature) + " 度";
-      //u8g2.setFont(u8g2_font_wqy12_t_chinese2);  // use wqy chinese2 for all the glyphs of "你好世界"
-      //u8g2.setFontDirection(0);
-      u8g2.clearBuffer();
-      u8g2.setCursor(0, 20);
-      u8g2.print("你好CPIoT世界");
-      u8g2.setCursor(0, 40);
-      u8g2.print(temp);
-      u8g2.sendBuffer();
-#else 
-      String temp = "Temp: " + String(temperature) + " °C";
-      display.clear();
-      oled_draw_title();
-      display.setFont(ArialMT_Plain_10);
-      display.drawString(0, 40, temp);
-      display.display();//将缓存数据写入到显示器
-#endif
-      mqtt_publish_temperature(temperature);
-    }
+    gpio_update_temperature();
     delay(1000);
   }
   buttonState = digitalRead(BUTTON3_PIN);
