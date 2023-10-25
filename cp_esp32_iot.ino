@@ -155,7 +155,7 @@ void gpio_led_toggle(int state) {
 }
 
 void mqtt_callback(char *topic, byte *payload, unsigned int length) {
-    Serial.print("Message arrived in topic: ");
+    Serial.print("-----------------------mqtt arrived in topic: ");
     Serial.println(topic);
     Serial.print("Message:");
     for (int i = 0; i < length; i++) {
@@ -174,7 +174,7 @@ void mqtt_callback(char *topic, byte *payload, unsigned int length) {
       }
     }
     Serial.println();
-    Serial.println("-----------------------");
+    Serial.println("-----------------------mqtt-end");
 }
 
 
