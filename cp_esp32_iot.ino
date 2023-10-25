@@ -195,6 +195,7 @@ void gpio_led_toggle(int state) {
 }
 
 void oled_message_board(String message) {
+  Serial.print("oled_message_board: " + message);
 #if USE_U8G2
   u8g2.clearBuffer();
   u8g2.setCursor(0, 20);
@@ -217,7 +218,7 @@ void mqtt_callback(char *topic, byte *payload, unsigned int length) {
         Serial.print((char) payload[i]);
         data += (char) payload[i];
     }
-    
+    Serial.println();
     Serial.print("Message len:");
     Serial.print(length);
     Serial.println();
@@ -249,6 +250,7 @@ void mqtt_callback(char *topic, byte *payload, unsigned int length) {
         Serial.println(error.f_str());
       } else {
         String message = doc["message"];
+        Serial.println(message);
         oled_message_board(message);
       }
     }
