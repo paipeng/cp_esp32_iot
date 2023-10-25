@@ -108,7 +108,16 @@ void wifi_connect(void)
 void mqtt_pong() {
   String mqttPong = String(MQTT_TOPIC_PREFIX) + String(MQTT_TOPIC_PONG);
   Serial.print("publish topic: " + mqttPong + "...\n");
-  boolean ret = mqttClient.publish(mqttPong.c_str(), "{\"udid\": \"420d2b68-6a4a-11ee-8c99-0242ac120002\", \"state\": 1}");
+  StaticJsonDocument<200> doc;
+  doc["udid"] = String(DEVICE_UDID);
+  doc["state"] = 1;
+  String json;
+  serializeJson(doc, json);
+  
+  Serial.println("pong json: ");
+  Serial.print(json);
+  Serial.println("");
+  boolean ret = mqttClient.publish(mqttPong.c_str(), json.c_str());
   if (ret) {
     Serial.print("publish success!\n");
   } else {
