@@ -6,8 +6,34 @@
 #include <PubSubClient.h>
 // Temeprature
 #include <DallasTemperature.h>
-// oled
+
+// OLED
+
+//OLED引脚定义
+#define SDA   23
+#define SCL   18
+
+#define USE_U8G2 1
+#if USE_U8G2
+// oled u8g2 chinese
+#include <U8g2lib.h>
+//#include <U8g2wqy.h>
+
+#ifdef U8X8_HAVE_HW_SPI
+#include <SPI.h>
+#endif
+#ifdef U8X8_HAVE_HW_I2C
+#include <Wire.h>
+#endif
+U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, 18, 23, U8X8_PIN_NONE);
+#else
 #include <SSD1306Wire.h>
+
+int counter = 1;
+SSD1306Wire display(0x3c, SDA, SCL);
+#endif
+
+
 // JSON
 #include <ArduinoJson.h>
 
@@ -33,15 +59,6 @@
 //#define MQTT_TOPIC_PING "PING"
 //#define MQTT_TOPIC_PONG "PONG"
 
-
-// OLED
-
-int counter = 1;
-
-//OLED引脚定义
-#define SDA   23
-#define SCL   18
-SSD1306Wire display(0x3c, SDA, SCL);
 
 
 // LED
@@ -256,14 +273,30 @@ float gpio_read_temperature() {
 }
 
 void oled_init() {
+#if USE_U8G2
+  u8g2.begin();
+  u8g2.enableUTF8Print();    // enable UTF8 support for the Arduino print() function
+#else
   display.init();//初始化UI
   display.flipScreenVertically();//垂直翻转屏幕设置
+#endif
 }
 
 void oled_draw_title() {
+#if USE_U8G2
+  u8g2.setFont(u8g2_font_wqy12_t_chinese2);  // use wqy chinese2 for all the glyphs of "你好世界"
+  u8g2.setFontDirection(0);
+  u8g2.clearBuffer();
+  u8g2.setCursor(0, 15);
+  u8g2.print("Hello World!");
+  u8g2.setCursor(0, 40);
+  u8g2.print("你好世界");    // Chinese "Hello World" 
+  u8g2.sendBuffer();
+#else
   display.setFont(ArialMT_Plain_24);//设置字体大小
   display.drawString(0, 0, "CP IOT");//显示
   display.display();//将缓存数据写入到显示器
+#endif
 }
 
 void setup(){
@@ -301,12 +334,24 @@ void loop(){
     Serial.println("The button2 is being pressed");
     float temperature = gpio_read_temperature();
     if (temperature != DEVICE_DISCONNECTED_C) {
+#if USE_U8G2
+      String temp = "温度: " + String(temperature) + " °C";
+      //u8g2.setFont(u8g2_font_wqy12_t_chinese2);  // use wqy chinese2 for all the glyphs of "你好世界"
+      //u8g2.setFontDirection(0);
+      u8g2.clearBuffer();
+      u8g2.setCursor(0, 15);
+      u8g2.print("你好 CP IoT 世界");
+      u8g2.setCursor(0, 40);
+      u8g2.print(temp);
+      u8g2.sendBuffer();
+#else 
       String temp = "Temp: " + String(temperature) + " °C";
       display.clear();
       oled_draw_title();
       display.setFont(ArialMT_Plain_10);
       display.drawString(0, 40, temp);
       display.display();//将缓存数据写入到显示器
+#endif
       mqtt_publish_temperature(temperature);
     }
     delay(1000);
