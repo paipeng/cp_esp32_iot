@@ -25,7 +25,9 @@
 #ifdef U8X8_HAVE_HW_I2C
 #include <Wire.h>
 #endif
-U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, 18, 23, U8X8_PIN_NONE);
+U8G2_SSD1306_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, SCL, SDA, U8X8_PIN_NONE);
+
+
 #else
 #include <SSD1306Wire.h>
 
@@ -276,6 +278,9 @@ void oled_init() {
 #if USE_U8G2
   u8g2.begin();
   u8g2.enableUTF8Print();    // enable UTF8 support for the Arduino print() function
+  
+  u8g2.setFont(u8g2_font_wqy12_t_chinese2);  // use wqy chinese2 for all the glyphs of "你好世界"
+  u8g2.setFontDirection(0);
 #else
   display.init();//初始化UI
   display.flipScreenVertically();//垂直翻转屏幕设置
@@ -284,13 +289,9 @@ void oled_init() {
 
 void oled_draw_title() {
 #if USE_U8G2
-  u8g2.setFont(u8g2_font_wqy12_t_chinese2);  // use wqy chinese2 for all the glyphs of "你好世界"
-  u8g2.setFontDirection(0);
   u8g2.clearBuffer();
-  u8g2.setCursor(0, 15);
-  u8g2.print("Hello World!");
-  u8g2.setCursor(0, 40);
-  u8g2.print("你好世界");    // Chinese "Hello World" 
+  u8g2.setCursor(0, 20);
+  u8g2.print("你好 CP IoT==========");    // Chinese "Hello World" 
   u8g2.sendBuffer();
 #else
   display.setFont(ArialMT_Plain_24);//设置字体大小
@@ -335,12 +336,12 @@ void loop(){
     float temperature = gpio_read_temperature();
     if (temperature != DEVICE_DISCONNECTED_C) {
 #if USE_U8G2
-      String temp = "温度: " + String(temperature) + " °C";
+      String temp = "揾度: " + String(temperature) + " 度";
       //u8g2.setFont(u8g2_font_wqy12_t_chinese2);  // use wqy chinese2 for all the glyphs of "你好世界"
       //u8g2.setFontDirection(0);
       u8g2.clearBuffer();
-      u8g2.setCursor(0, 15);
-      u8g2.print("你好 CP IoT 世界");
+      u8g2.setCursor(0, 20);
+      u8g2.print("你好CPIoT世界");
       u8g2.setCursor(0, 40);
       u8g2.print(temp);
       u8g2.sendBuffer();
