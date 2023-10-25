@@ -364,7 +364,8 @@ void gpio_update_temperature() {
 
 void IRAM_ATTR onTimer(){
   Serial.println("onTimer");
-  gpio_update_temperature();
+  
+  //gpio_update_temperature();
 }
 
 void init_timer() {
