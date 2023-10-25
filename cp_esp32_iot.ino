@@ -83,7 +83,7 @@ void wifi_connect(void)
   Serial.print("\nDefault ESP32 MAC Address: ");
   Serial.println(WiFi.macAddress());
   
-  Serial.print("\nDevice UUID: ");
+  Serial.print("\nDevice UDID: ");
   strncpy(DEVICE_UDID, WiFi.macAddress().c_str(), 17);
   Serial.println(DEVICE_UDID);
   
