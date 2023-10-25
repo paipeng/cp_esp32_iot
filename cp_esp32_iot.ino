@@ -275,8 +275,9 @@ void loop(){
     if (temperature != DEVICE_DISCONNECTED_C) {
       String temp = "Temp: " + String(temperature) + " °C";
       display.clear();
+      oled_draw_title();
       display.setFont(ArialMT_Plain_10);
-      display.drawString(0, 0, temp);
+      display.drawString(0, 40, temp);
       display.display();//将缓存数据写入到显示器
       mqtt_publish_temperature(temperature);
     }
