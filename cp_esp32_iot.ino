@@ -227,6 +227,17 @@ float gpio_read_temperature() {
   return tempC;
 }
 
+void oled_init() {
+  display.init();//初始化UI
+  display.flipScreenVertically();//垂直翻转屏幕设置
+}
+
+void oled_draw_title() {
+  display.setFont(ArialMT_Plain_24);//设置字体大小
+  display.drawString(0, 0, "CP IOT");//显示
+  display.display();//将缓存数据写入到显示器
+}
+
 void setup(){
   delay(2000);
   Serial.begin(115200);
@@ -237,11 +248,8 @@ void setup(){
   pinMode(BUTTON3_PIN, INPUT_PULLUP);
   sensors.begin();
   
-  display.init();//初始化UI
-  display.flipScreenVertically();//垂直翻转屏幕设置
-  display.setFont(ArialMT_Plain_24);//设置字体大小
-  display.drawString(0, 0, "CP IOT");//显示
-  display.display();//将缓存数据写入到显示器
+  oled_init();
+  oled_draw_title();
 
   
   wifi_connect();
