@@ -44,7 +44,20 @@ SSD1306Wire display(0x3c, SDA, SCL);
 #include "mqtt_const.h"
 
 // Timer
-hw_timer_t *cp_timer = NULL;
+volatile int interruptCounter;  // When this is not zero, we'll take a reading from the sensor
+// The interrupt service routine will increment it.
+// When the sensor is read, this variable is decremented.
+
+volatile int blinkCounter = 0;
+
+// The hardware timer pointer
+hw_timer_t * cp_timer = NULL;
+
+// This variable is used for syncronisation
+// We use it to ensure that the ISR and the loop
+// do not try to access the interruptCounter variable
+// at the same time.
+portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
 
 // WIFI_SSID and WIFI_PASSWD are defined in wifi_const.h
@@ -315,7 +328,8 @@ void oled_init() {
   u8g2.begin();
   u8g2.enableUTF8Print();    // enable UTF8 support for the Arduino print() function
   
-  u8g2.setFont(u8g2_font_wqy12_t_chinese2);  // use wqy chinese2 for all the glyphs of "你好世界"
+  u8g2.setFont(u8g2_font_wqy12_t_gb2312);  // use wqy gb2312
+  //u8g2.setFont(u8g2_font_wqy12_t_chinese3);  // use wqy chinese2 for all the glyphs of "你好世界"
   u8g2.setFontDirection(0);
 #else
   display.init();//初始化UI
@@ -341,7 +355,7 @@ void gpio_update_temperature() {
   float temperature = gpio_read_temperature();
   if (temperature != DEVICE_DISCONNECTED_C) {
 #if USE_U8G2
-    String temp = "揾度: " + String(temperature) + " 度";
+    String temp = "温度: " + String(temperature) + " 度";
     //u8g2.setFont(u8g2_font_wqy12_t_chinese2);  // use wqy chinese2 for all the glyphs of "你好世界"
     //u8g2.setFontDirection(0);
     u8g2.clearBuffer();
@@ -365,17 +379,38 @@ void gpio_update_temperature() {
 void IRAM_ATTR onTimer(){
   Serial.println("onTimer");
   
-  //gpio_update_temperature();
+  portENTER_CRITICAL_ISR(&timerMux);
+  interruptCounter++;
+  blinkCounter++;
+  portEXIT_CRITICAL_ISR(&timerMux);
 }
 
 void init_timer() {
   // 80Mhz = 1 second
   // 80 * 60 = 1 minute
   // 80 * 60 * 60 = 1 hour
-  cp_timer = timerBegin(0, 80 * 60 * 1, true);
+
+
+  // Initilise the timer.
+  // Parameter 1 is the timer we want to use. Valid: 0, 1, 2, 3 (total 4 timers)
+  // Parameter 2 is the prescaler. The ESP32 default clock is at 80MhZ. The value "80" will
+  // divide the clock by 80, giving us 1,000,000 ticks per second.
+  // Parameter 3 is true means this counter will count up, instead of down (false).
+  cp_timer = timerBegin(0, 80 * 5 * 1, true);
+
+  // Attach the timer to the interrupt service routine named "onTimer".
+  // The 3rd parameter is set to "true" to indicate that we want to use the "edge" type (instead of "flat").
   timerAttachInterrupt(cp_timer, &onTimer, true);
+
+  // This is where we indicate the frequency of the interrupts.
+  // The value "1000000" (because of the prescaler we set in timerBegin) will produce
+  // one interrupt every second.
+  // The 3rd parameter is true so that the counter reloads when it fires an interrupt, and so we
+  // can get periodic interrupts (instead of a single interrupt).
   timerAlarmWrite(cp_timer, 1000000, true);
-  timerAlarmEnable(cp_timer); //Just Enable
+
+  // Start the timer
+  timerAlarmEnable(cp_timer);
 }
 
 void setup(){
@@ -404,6 +439,7 @@ void setup(){
 }
 
 void loop(){
+  if (interruptCounter > 0) {
   int buttonState = digitalRead(BUTTON_PIN); // read new state
   if (buttonState == LOW) {
     Serial.println("The button is being pressed");
@@ -419,8 +455,6 @@ void loop(){
   buttonState = digitalRead(BUTTON3_PIN);
   if (buttonState == LOW) {
     Serial.println("The button3 is being pressed");
-    
-    
     if (LED_STATE == 0) {
       LED_STATE = 1;
     } else {
@@ -434,5 +468,15 @@ void loop(){
     mqttClient.loop();
   } else {
     Serial.println("mqtt disconnected");    
+  }
+    if (LED_STATE == 0) {
+      LED_STATE = 1;
+    } else {
+      LED_STATE = 0;
+    }
+
+    gpio_led_toggle(LED_STATE);
+    delay(1000);
+    interruptCounter = 0;
   }
 }
