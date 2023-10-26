@@ -396,7 +396,7 @@ void init_timer() {
   // Parameter 2 is the prescaler. The ESP32 default clock is at 80MhZ. The value "80" will
   // divide the clock by 80, giving us 1,000,000 ticks per second.
   // Parameter 3 is true means this counter will count up, instead of down (false).
-  cp_timer = timerBegin(0, 80 * 5 * 1, true);
+  cp_timer = timerBegin(0, 80 * 60 * 15, true);
 
   // Attach the timer to the interrupt service routine named "onTimer".
   // The 3rd parameter is set to "true" to indicate that we want to use the "edge" type (instead of "flat").
@@ -440,6 +440,10 @@ void setup(){
 
 void loop(){
   if (interruptCounter > 0) {
+    Serial.println("interruptCounter");
+    gpio_update_temperature();
+    interruptCounter = 0;
+  }
   int buttonState = digitalRead(BUTTON_PIN); // read new state
   if (buttonState == LOW) {
     Serial.println("The button is being pressed");
@@ -468,15 +472,5 @@ void loop(){
     mqttClient.loop();
   } else {
     Serial.println("mqtt disconnected");    
-  }
-    if (LED_STATE == 0) {
-      LED_STATE = 1;
-    } else {
-      LED_STATE = 0;
-    }
-
-    gpio_led_toggle(LED_STATE);
-    delay(1000);
-    interruptCounter = 0;
   }
 }
