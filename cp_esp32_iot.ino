@@ -80,6 +80,7 @@ portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
 // LED
 #define CP_GPIO_LED    15 //1-wire数据总线连接
+#define CP_GPIO_LED_MQTT    2 //1-wire数据总线连接
 
 
 
@@ -209,6 +210,16 @@ void gpio_led_toggle(int state) {
   }
 }
 
+void gpio_led_mqtt_toggle(int state) {
+  Serial.println("gpio_led_mqtt_toggle: " + String(state));
+  LED_STATE = state;
+  if (state == 1) {
+    digitalWrite(CP_GPIO_LED_MQTT, HIGH);//LED1引脚输出高电平，点亮
+  } else {
+    digitalWrite(CP_GPIO_LED_MQTT, LOW);//LED1引脚输出低电平，熄灭
+  }
+}
+
 void oled_message_board(String message) {
   Serial.print("oled_message_board: " + message);
 #if USE_U8G2
@@ -285,10 +296,12 @@ void mqtt_connect() {
       Serial.printf("The client %s connects to the public MQTT broker\n", client_id.c_str());
       if (mqttClient.connect(client_id.c_str(), MQTT_USERNAME, MQTT_PASSWORD)) {
           Serial.println("Public EMQX MQTT broker connected");
+          gpio_led_mqtt_toggle(1);
       } else {
           Serial.print("failed with state ");
           Serial.print(mqttClient.state());  
           Serial.println("\n");
+          gpio_led_mqtt_toggle(0);
           delay(2000);
       }
   }    
@@ -396,7 +409,7 @@ void init_timer() {
   // Parameter 2 is the prescaler. The ESP32 default clock is at 80MhZ. The value "80" will
   // divide the clock by 80, giving us 1,000,000 ticks per second.
   // Parameter 3 is true means this counter will count up, instead of down (false).
-  cp_timer = timerBegin(0, 80 * 60 * 15, true);
+  cp_timer = timerBegin(0, 80 * 60, true);
 
   // Attach the timer to the interrupt service routine named "onTimer".
   // The 3rd parameter is set to "true" to indicate that we want to use the "edge" type (instead of "flat").
@@ -417,9 +430,10 @@ void setup(){
   delay(2000);
   Serial.begin(115200);
 
-  init_timer();
 
   pinMode(CP_GPIO_LED, OUTPUT);
+  pinMode(CP_GPIO_LED_MQTT, OUTPUT);
+  
   pinMode(BUTTON_PIN, INPUT_PULLUP); // set ESP32 pin to input pull-up mode
   pinMode(BUTTON2_PIN, INPUT_PULLUP);
   pinMode(BUTTON3_PIN, INPUT_PULLUP);
@@ -436,10 +450,11 @@ void setup(){
   // Publish and subscribe
   mqtt_pong();
   mqtt_subscribe();
+  init_timer();
 }
 
 void loop(){
-  if (interruptCounter > 0) {
+  if (interruptCounter > 14) {
     Serial.println("interruptCounter");
     gpio_update_temperature();
     interruptCounter = 0;
